@@ -1,14 +1,16 @@
 import React from 'react';
 import { useQuery, useMutation, useSubscription } from '@apollo/client';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { 
-  List, 
-  ListItem, 
-  ListItemText, 
-  CircularProgress, 
-  Button, 
-  Box, 
-  Typography 
+import {
+  List,
+  ListItem,
+  ListItemText,
+  CircularProgress,
+  Button,
+  Box,
+  Typography,
+  Card,
+  CardContent,
 } from '@mui/material';
 import { GET_POSTS, UPDATE_POST_ORDER, POST_UPDATED_SUBSCRIPTION } from '../graphql/queries';
 
@@ -57,6 +59,7 @@ const PostList = () => {
         updatePostOrder: {
           __typename: 'Post',
           id: reorderedItem.id,
+          title: reorderedItem.title,
           order: result.destination.index
         }
       },
@@ -103,17 +106,27 @@ const PostList = () => {
             <List {...provided.droppableProps} ref={provided.innerRef}>
               {data.posts.map((post, index) => (
                 <Draggable key={post.id} draggableId={post.id} index={index}>
-                  {(provided) => (
-                    <ListItem
+                  {(provided, snapshot) => (
+                    <div
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
+                      style={{
+                        ...provided.draggableProps.style,
+                        marginBottom: 8,
+                        backgroundColor: snapshot.isDragging ? 'lightgreen' : 'white',
+                        ...provided.draggableProps.style
+                      }}
                     >
-                      <ListItemText 
-                        primary={post.title} 
-                        secondary={`Order: ${post.order}`} 
-                      />
-                    </ListItem>
+                      <Card style={{ width: '100%' }}>
+                        <CardContent>
+                          <ListItemText 
+                            primary={post.title} 
+                            secondary={`Order: ${post.order}`} 
+                          />
+                        </CardContent>
+                      </Card>
+                    </div>
                   )}
                 </Draggable>
               ))}
@@ -123,7 +136,7 @@ const PostList = () => {
         </Droppable>
       </DragDropContext>
       {data.posts.length % POSTS_PER_PAGE === 0 && (
-        <Box mt={2}>
+        <Box mt={2} textAlign="center">
           <Button variant="contained" onClick={loadMore}>
             Load More
           </Button>
