@@ -1,4 +1,5 @@
-import sequelize from '../config/database.js';
+import sequelize  from '../config/database.js';
+import { Sequelize, Op } from 'sequelize';
 import Post from '../models/Post.js';
 
 // Define GraphQL resolvers
@@ -8,7 +9,7 @@ const resolvers = {
     // Resolver to fetch a list of posts with pagination (offset and limit)
     posts: async (_, { offset, limit }) => {
       return Post.findAll({
-        order: [['order', 'ASC']], // Order posts by the 'order' field in ascending order
+        order: [[sequelize.literal('"order"'), 'ASC']], // Order posts by the 'order' field in ascending order
         offset, // Offset for pagination
         limit // Limit for pagination
       });
@@ -37,13 +38,13 @@ const resolvers = {
       // Adjust the order of other posts to accommodate the new order
       if (newOrder > oldOrder) {
         await Post.update(
-          { order: sequelize.literal('order - 1') },
-          { where: { order: { [sequelize.Op.between]: [oldOrder + 1, newOrder] } } }
+          { order: Sequelize.literal('order - 1') },
+          { where: { order: { [Op.between]: [oldOrder + 1, newOrder] } } }
         );
       } else if (newOrder < oldOrder) {
         await Post.update(
-          { order: sequelize.literal('order + 1') },
-          { where: { order: { [sequelize.Op.between]: [newOrder, oldOrder - 1] } } }
+          { order: Sequelize.literal('order + 1') },
+          { where: { order: { [Op.between]: [newOrder, oldOrder - 1] } } }
         );
       }
 
@@ -55,9 +56,11 @@ const resolvers = {
       const updatedPosts = await Post.findAll({
         where: {
           order: {
-            [sequelize.Op.between]: [Math.min(oldOrder, newOrder), Math.max(oldOrder, newOrder)]
+            [Op.between]: [Math.min(oldOrder, newOrder), Math.max(oldOrder, newOrder)]
           }
-        }
+        },
+        order: [[sequelize.literal('"order"'), 'ASC']],
+        transaction
       });
 
       // Notify subscribers about the updated posts

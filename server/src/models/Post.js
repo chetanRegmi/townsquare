@@ -1,23 +1,18 @@
-import { Sequelize } from 'sequelize';
+import { Model, DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
 
 // Define the Post model
-const Post = sequelize.define('Post', {
-    // Define the id field as an integer, primary key, and auto-incremented
-    id: {
-        type: Sequelize.INTEGER,
-        primaryKey: true,
-        autoIncrement: true,
-    },
-    // Define the title field as a string
-    title: {
-        type: Sequelize.STRING,
-    },
-    // Define the order field as an integer
-    order: {
-        type: Sequelize.INTEGER,
-    },
-});
+class Post extends Model { }
 
-// Export the Post model
-export default Post;
+Post.init({
+    title: DataTypes.STRING,
+    order: {
+      type: DataTypes.INTEGER,
+      field: '`order`'
+    }
+  }, {
+    sequelize,
+    modelName: 'Post'
+  });
+  
+  export default Post;
