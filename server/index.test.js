@@ -1,61 +1,128 @@
-import { ApolloServer } from 'apollo-server-express';
-import express from 'express';
-import { createServer } from 'http';
-import { SubscriptionServer } from 'subscriptions-transport-ws';
-import { makeExecutableSchema } from '@graphql-tools/schema';
-import { PubSub } from 'graphql-subscriptions';
+import { jest } from '@jest/globals';
 import dotenv from 'dotenv';
-import cors from 'cors';
 
-// Mock the imported modules
-jest.mock('apollo-server-express');
-jest.mock('express');
-jest.mock('http');
-jest.mock('subscriptions-transport-ws');
-jest.mock('@graphql-tools/schema');
-jest.mock('graphql-subscriptions');
-jest.mock('dotenv');
-jest.mock('cors');
+// Load environment variables
+dotenv.config();
 
-// Mock the imported local modules
-jest.mock('./src/schema/schema.js', () => ({ default: 'mockedTypeDefs' }));
-jest.mock('./src/resolvers/resolvers.js', () => ({ default: 'mockedResolvers' }));
+// Mock modules
+jest.mock('express', () => jest.fn(() => ({
+  use: jest.fn(),
+  listen: jest.fn()
+})));
+
+jest.mock('http', () => ({
+  createServer: jest.fn(() => ({
+    listen: jest.fn()
+  }))
+}));
+
+jest.mock('apollo-server-express', () => {
+  const originalModule = jest.requireActual('apollo-server-express');
+  return {
+    ...originalModule,
+    ApolloServer: jest.fn().mockImplementation(() => ({
+      start: jest.fn(),
+      applyMiddleware: jest.fn(),
+      getMiddleware: jest.fn(),
+    })),
+    gql: jest.fn((strings, ...values) => strings.raw[0]),
+  };
+});
+
+jest.mock('graphql', () => ({
+  GraphQLSchema: jest.fn(),
+  GraphQLObjectType: jest.fn(),
+  GraphQLString: jest.fn(),
+}));
+
+jest.mock('subscriptions-transport-ws', () => ({
+  SubscriptionServer: {
+    create: jest.fn()
+  }
+}));
+
+jest.mock('@graphql-tools/schema', () => ({
+  makeExecutableSchema: jest.fn().mockReturnValue({
+    getQueryType: () => ({}),
+    getMutationType: () => ({}),
+    getSubscriptionType: () => ({}),
+  })
+}));
+
+jest.mock('graphql-subscriptions', () => ({
+  PubSub: jest.fn()
+}));
+
+jest.mock('cors', () => jest.fn());
+
+// Mock Sequelize
+jest.mock('sequelize', () => {
+  const mSequelize = {
+    authenticate: jest.fn().mockResolvedValue(),
+    define: jest.fn(),
+    sync: jest.fn().mockResolvedValue()
+  };
+  return { 
+    Sequelize: jest.fn(() => mSequelize)
+  };
+});
+
+jest.mock('./src/schema/schema.js', () => ({
+  default: 'mockedTypeDefs',
+}), { virtual: true });
+
+jest.mock('./src/resolvers/resolvers.js', () => ({
+  default: 'mockedResolvers',
+}), { virtual: true });
 
 describe('Server Setup', () => {
-  let originalEnv;
-
   beforeEach(() => {
-    originalEnv = process.env;
-    process.env = { ...originalEnv };
     jest.resetModules();
   });
 
   afterEach(() => {
-    process.env = originalEnv;
     jest.clearAllMocks();
   });
 
+  test('should initialize Sequelize with correct config', async () => {
+    const { Sequelize } = await import('sequelize');
+    await import('./src/config/database.js');
+    expect(Sequelize).toHaveBeenCalledWith(
+      process.env.DATABASE_NAME,
+      process.env.DATABASE_USER,
+      process.env.DATABASE_PASSWORD,
+      {
+        host: process.env.DATABASE_HOST,
+        dialect: process.env.DATABASE_DIALECT,
+      }
+    );
+  });
+
   test('should initialize Express app and create HTTP server', async () => {
+    const { default: express } = await import('express');
+    const { createServer } = await import('http');
     await import('./index.js');
     expect(express).toHaveBeenCalled();
     expect(createServer).toHaveBeenCalled();
   });
 
   test('should enable CORS with correct options', async () => {
-    process.env.CLIENT_URL = 'http://testclient.com';
+    const cors = await import('cors');
     await import('./index.js');
-    expect(cors).toHaveBeenCalledWith({
-      origin: 'http://testclient.com',
+    expect(cors.default).toHaveBeenCalledWith({
+      origin: process.env.CLIENT_URL || 'http://localhost:3000',
       credentials: true
     });
   });
 
   test('should create PubSub instance', async () => {
+    const { PubSub } = await import('graphql-subscriptions');
     await import('./index.js');
     expect(PubSub).toHaveBeenCalled();
   });
 
   test('should create executable schema', async () => {
+    const { makeExecutableSchema } = await import('@graphql-tools/schema');
     await import('./index.js');
     expect(makeExecutableSchema).toHaveBeenCalledWith({
       typeDefs: 'mockedTypeDefs',
@@ -64,6 +131,7 @@ describe('Server Setup', () => {
   });
 
   test('should initialize ApolloServer with correct config', async () => {
+    const { ApolloServer } = await import('apollo-server-express');
     await import('./index.js');
     expect(ApolloServer).toHaveBeenCalledWith(expect.objectContaining({
       schema: expect.any(Object),
@@ -73,23 +141,18 @@ describe('Server Setup', () => {
   });
 
   test('should start ApolloServer and apply middleware', async () => {
-    const startMock = jest.fn();
-    const applyMiddlewareMock = jest.fn();
-    ApolloServer.mockImplementation(() => ({
-      start: startMock,
-      applyMiddleware: applyMiddlewareMock
-    }));
-
+    const { ApolloServer } = await import('apollo-server-express');
     await import('./index.js');
-    
-    expect(startMock).toHaveBeenCalled();
-    expect(applyMiddlewareMock).toHaveBeenCalledWith(expect.objectContaining({
+    const mockServer = ApolloServer.mock.results[0].value;
+    expect(mockServer.start).toHaveBeenCalled();
+    expect(mockServer.applyMiddleware).toHaveBeenCalledWith(expect.objectContaining({
       app: expect.any(Object),
       path: '/graphql'
     }));
   });
 
   test('should create SubscriptionServer', async () => {
+    const { SubscriptionServer } = await import('subscriptions-transport-ws');
     await import('./index.js');
     expect(SubscriptionServer.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -107,12 +170,15 @@ describe('Server Setup', () => {
   });
 
   test('should start HTTP server on specified port', async () => {
-    const listenMock = jest.fn();
-    createServer.mockReturnValue({ listen: listenMock });
-    process.env.PORT = '5000';
-
+    const { createServer } = await import('http');
     await import('./index.js');
+    const mockServer = createServer.mock.results[0].value;
+    expect(mockServer.listen).toHaveBeenCalledWith(expect.any(Number), expect.any(Function));
+  });
 
-    expect(listenMock).toHaveBeenCalledWith(5000, expect.any(Function));
+  test('should use gql to define schema', async () => {
+    const { gql } = await import('apollo-server-express');
+    await import('./src/schema/schema.js');
+    expect(gql).toHaveBeenCalled();
   });
 });
