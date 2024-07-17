@@ -1,5 +1,5 @@
-const { PubSub } = require('apollo-server');
-import { Post } from '../models/Post';
+import { PubSub } from 'graphql-subscriptions';
+import Post from '../models/Post.js';
 
 const pubsub = new PubSub();
 
@@ -41,4 +41,4 @@ const resolvers = {
       },
     };
     
-    module.exports = resolvers;
+   export default resolvers;

@@ -1,5 +1,5 @@
-const { Sequelize } = require('sequelize');
-const sequelize = require('../config/database');
+import { Sequelize } from 'sequelize';
+import sequelize from '../config/database.js';
 
 const Post = sequelize.define('Post', {
     id: {
@@ -15,4 +15,4 @@ const Post = sequelize.define('Post', {
     },
 });
 
-module.exports = Post;
+export default Post;

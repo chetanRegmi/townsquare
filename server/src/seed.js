@@ -1,7 +1,9 @@
-require('dotenv').config();
-const { faker } = require('@faker-js/faker');
-const sequelize = require('./config/database');
-const Post = require('./models/Post');
+import { faker } from '@faker-js/faker';
+import sequelize from './config/database.js';
+import Post from './models/Post.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const createMockData = async () => {
   try {

@@ -1,6 +1,5 @@
 import { gql } from 'apollo-server';
 
-
 const schema = gql`
     type Post {
         id: ID!
@@ -15,19 +14,12 @@ const schema = gql`
 
     type Mutation {
         createPost(title: String!): Post!
-        updatePostOrder(postId: ID!, title: String, order: Int!): Post!
+        updatePostOrder(postId: ID!, newOrder: Int!): Post!
         deletePost(postId: ID!): Boolean!
-        updatePostOrder(postId: Id!, newOrder: Int!): Post!
     }
 
     type Subscription {
         postUpdated: Post!
-    }
-
-    schema { 
-        query: Query
-        mutation: Mutation
-        subscription: Subscription
     }
 `;
 
