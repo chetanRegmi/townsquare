@@ -1,3 +1,4 @@
+import sequelize from '../config/database.js';
 import Post from '../models/Post.js';
 
 const resolvers = {
@@ -23,9 +24,36 @@ const resolvers = {
         throw new Error('Post not found');
       }
       post.order = newOrder;
+
+      const oldOrder = post.order;
+
+      if (newOrder > oldOrder) {
+        await Post.update(
+          { order: sequelize.literal('order - 1') },
+          { where: { order: { [sequelize.Op.between]: [oldOrder + 1, newOrder] } } }
+        );
+      } else if (newOrder < oldOrder) { 
+        await Post.update(
+          { order: sequelize.literal('order + 1') },
+          { where: { order: { [sequelize.Op.between]: [newOrder, oldOrder - 1] } } }
+        );
+      }
+
+      post.order = newOrder;
+
       await post.save();
-      
-      pubsub.publish('POST_UPDATED', { postUpdated: post });
+
+      const updatedPosts = await Post.findAll({
+        where: {
+          order: {
+            [sequelize.Op.between]: [Math.min(oldOrder, newOrder), Math.max(oldOrder, newOrder)]
+          }
+        }
+      });
+
+      updatedPosts.forEach(updatedPost => {
+        pubsub.publish('POST_UPDATED', { postUpdated: updatedPost });
+      });
       
       return post;
     },

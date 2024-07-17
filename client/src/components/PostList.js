@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useQuery, useMutation, useSubscription } from '@apollo/client';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { 
@@ -15,7 +15,6 @@ import { GET_POSTS, UPDATE_POST_ORDER, POST_UPDATED_SUBSCRIPTION } from '../grap
 const POSTS_PER_PAGE = 20;
 
 const PostList = () => {
-  const [, setOffset] = useState(0);
   const { loading, error, data, fetchMore } = useQuery(GET_POSTS, {
     variables: { offset: 0, limit: POSTS_PER_PAGE }
   });

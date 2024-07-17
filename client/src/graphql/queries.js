@@ -14,6 +14,7 @@ export const UPDATE_POST_ORDER = gql`
   mutation UpdatePostOrder($postId: ID!, $newOrder: Int!) {
     updatePostOrder(postId: $postId, newOrder: $newOrder) {
       id
+      title
       order
     }
   }
