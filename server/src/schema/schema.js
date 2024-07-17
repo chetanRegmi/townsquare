@@ -1,26 +1,26 @@
-import { gql } from 'apollo-server';
+import { gql } from 'apollo-server-express';
 
-const schema = gql`
-    type Post {
-        id: ID!
-        title: String!
-        order: Int!
-    }
+const typeDefs = gql`
+  type Post {
+    id: ID!
+    title: String!
+    order: Int!
+  }
 
-    type Query {
-        posts: [Post!]!
-        post(id: ID!): Post
-    }
+  type Query {
+    posts(offset: Int!, limit: Int!): [Post!]!
+    post(id: ID!): Post
+  }
 
-    type Mutation {
-        createPost(title: String!): Post!
-        updatePostOrder(postId: ID!, newOrder: Int!): Post!
-        deletePost(postId: ID!): Boolean!
-    }
+  type Mutation {
+    createPost(title: String!): Post!
+    updatePostOrder(postId: ID!, newOrder: Int!): Post!
+    deletePost(postId: ID!): Boolean!
+  }
 
-    type Subscription {
-        postUpdated: Post!
-    }
+  type Subscription {
+    postUpdated: Post!
+  }
 `;
 
-export default schema;
+export default typeDefs;

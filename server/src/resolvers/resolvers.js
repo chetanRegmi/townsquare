@@ -1,44 +1,48 @@
-import { PubSub } from 'graphql-subscriptions';
 import Post from '../models/Post.js';
 
-const pubsub = new PubSub();
-
 const resolvers = {
-    Query: {
-        posts: async () => {
-            return Post.findAll();
-        },
-        post: async (parent, { id }) => { 
-            return Post.findByPk(id);
-        },
+  Query: {
+    posts: async (_, { offset, limit }) => {
+      return Post.findAll({
+        order: [['order', 'ASC']],
+        offset,
+        limit
+      });
     },
-    Mutation: {
-        createPost: async (parent, { title }) => {
-          return Post.create({ title, order: 0 });
-        },
-        updatePostOrder: async (parent, { postId, newOrder }) => {
-          const post = await Post.findByPk(postId);
-          if (!post) {
-            throw new Error('Post not found');
-          }
-          post.order = newOrder;
-          await post.save();
-          return post;
-        },
-        deletePost: async (parent, { postId }) => {
-          const post = await Post.findByPk(postId);
-          if (!post) {
-            throw new Error('Post not found');
-          }
-          await post.destroy();
-          return true;
-        },
-      },
-      Subscription: {
-        postUpdated: {
-          subscribe: () => pubsub.asyncIterator('POST_UPDATED'),
-        },
-      },
-    };
-    
-   export default resolvers;
+    post: async (_, { id }) => {
+      return Post.findByPk(id);
+    },
+  },
+  Mutation: {
+    createPost: async (_, { title }) => {
+      return Post.create({ title, order: 0 });
+    },
+    updatePostOrder: async (_, { postId, newOrder }, { pubsub }) => {
+      const post = await Post.findByPk(postId);
+      if (!post) {
+        throw new Error('Post not found');
+      }
+      post.order = newOrder;
+      await post.save();
+      
+      pubsub.publish('POST_UPDATED', { postUpdated: post });
+      
+      return post;
+    },
+    deletePost: async (_, { postId }) => {
+      const post = await Post.findByPk(postId);
+      if (!post) {
+        throw new Error('Post not found');
+      }
+      await post.destroy();
+      return true;
+    },
+  },
+  Subscription: {
+    postUpdated: {
+      subscribe: (_, __, { pubsub }) => pubsub.asyncIterator(['POST_UPDATED'])
+    },
+  },
+};
+
+export default resolvers;
