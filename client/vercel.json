@@ -8,10 +8,13 @@
       }
     ],
     "routes": [
+      {
+        "src": "/static/(.*).js",
+        "headers": { "Content-Type": "application/javascript" }
+      },
       { "src": "/(.*)", "dest": "/" }
     ],
     "env": {
-        "NODE_OPTIONS": "--openssl-legacy-provider"
-      }
+      "NODE_OPTIONS": "--openssl-legacy-provider"
+    }
   }
-  
