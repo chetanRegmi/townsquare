@@ -6,7 +6,9 @@ const typeDefs = gql`
   type Post {
     id: ID!
     title: String!
-    order: Int!
+    postOrder: Int!
+    createdAt: String!
+    updatedAt: String!
   }
 
   # Define the root Query type with fields for fetching posts and a single post by id

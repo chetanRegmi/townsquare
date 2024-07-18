@@ -15,7 +15,7 @@ const createMockData = async () => {
     for (let i = 0; i < 300; i++) {
       await Post.create({
         title: faker.lorem.sentence(), // Generate a random sentence for the title
-        order: i + 1, // Assign an incremental order value
+        postOrder: i + 1, // Assign an incremental order value
       });
     }
 

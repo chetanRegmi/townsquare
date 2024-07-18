@@ -6,13 +6,14 @@ class Post extends Model { }
 
 Post.init({
     title: DataTypes.STRING,
-    order: {
+    postOrder: {
       type: DataTypes.INTEGER,
-      field: '`order`'
+      field: 'post_order'
     }
   }, {
     sequelize,
-    modelName: 'Post'
+    modelName: 'Post',
+    tableName: 'posts'
   });
   
   export default Post;
