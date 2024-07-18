@@ -18,7 +18,7 @@ const app = express();
 
 // Enable CORS to allow cross-origin requests
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000', // Allowed origin
+  origin: process.env.CLIENT_URL || 'https://townsquare-client-rho.vercel.app/', // Allowed origin
   credentials: true // Allow credentials
 }));
 
