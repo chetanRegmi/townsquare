@@ -9,6 +9,10 @@
     ],
     "routes": [
       {
+        "src": "/manifest.json",
+        "dest": "/manifest.json"
+      },
+      {
         "src": "/static/(.*).js",
         "headers": { "Content-Type": "application/javascript" }
       },
