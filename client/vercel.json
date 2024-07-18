@@ -12,6 +12,7 @@
         "src": "/manifest.json",
         "dest": "/manifest.json"
       },
+      { "src": "/api/graphql", "dest": "/api/graphql" },
       {
         "src": "/static/(.*).js",
         "headers": { "Content-Type": "application/javascript" }
