@@ -3,14 +3,7 @@
     "builds": [
       {
         "src": "index.js",
-        "use": "@vercel/node",
-        "config": {
-          "build": {
-            "env": {
-              "NODE_OPTIONS": "--experimental-modules"
-            }
-          }
-        }
+        "use": "@vercel/node"
       }
     ],
     "routes": [
@@ -18,11 +11,6 @@
         "src": "/(.*)",
         "dest": "index.js"
       }
-    ],
-    "build": {
-      "env": {
-        "NODE_OPTIONS": "--experimental-modules"
-      }
-    },
-    "buildCommand": "node src/seed.js && npm run build"
+    ]
   }
+  
