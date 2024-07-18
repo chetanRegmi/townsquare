@@ -29,6 +29,7 @@
     "graphql": "^16.9.0",
     "graphql-subscriptions": "^2.0.0",
     "http": "^0.0.1-security",
+    "micro-cors": "^0.1.1",
     "mongoose": "^8.5.1",
     "mysql2": "^3.10.3",
     "pg": "^8.12.0",
