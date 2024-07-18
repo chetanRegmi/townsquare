@@ -5,6 +5,7 @@ import { WebSocketLink } from '@apollo/client/link/ws';
 // Create an HTTP link for regular queries and mutations
 const httpLink = new HttpLink({
   uri: 'https://townsquare-server-2el52zaw0-chetan-regmis-projects.vercel.app/graphql', // GraphQL server URL
+  Authorization: `Bearer ${localStorage.getItem('token')}`,
 });
 
 // Create a WebSocket link for subscriptions
@@ -12,6 +13,9 @@ const wsLink = new WebSocketLink({
   uri: 'wss://townsquare-server-2el52zaw0-chetan-regmis-projects.vercel.app/graphql', // WebSocket URL for GraphQL subscriptions
   options: {
     reconnect: true, // Automatically reconnect if the connection is lost
+    connectionParams: {
+      authToken: localStorage.getItem('token'), //  authentication token here
+    },
   },
 });
 
