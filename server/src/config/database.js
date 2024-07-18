@@ -4,12 +4,12 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const sequelize = new Sequelize(
-    process.env.DATABASE_NAME,
-    process.env.DATABASE_USER,
-    process.env.DATABASE_PASSWORD,
+    process.env.POSTGRES_URL,
+    process.env.POSTGRES_USER,
+    process.env.POSTGRES_PASSWORD,
     {
-        host: process.env.DATABASE_HOST,
-        dialect: process.env.DATABASE_DIALECT,
+        host: process.env.POSTGRES_HOST,
+        dialect: process.env.POSTGRES_DIALECT,
     }
 );
 

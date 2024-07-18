@@ -9,7 +9,6 @@ yarn-debug.log*
 yarn-error.log*
 
 # Environment variables
-.env
 
 # OS generated files
 .DS_Store
