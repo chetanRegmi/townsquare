@@ -9,6 +9,9 @@
     ],
     "routes": [
       { "src": "/(.*)", "dest": "/" }
-    ]
+    ],
+    "env": {
+        "NODE_OPTIONS": "--openssl-legacy-provider"
+      }
   }
   
