@@ -1,34 +1,9 @@
-import { ApolloServer } from 'apollo-server-express';
-import { createServer } from 'http';
-import express from 'express';
-import { execute, subscribe } from 'graphql';
-import { SubscriptionServer } from 'subscriptions-transport-ws';
+import { ApolloServer } from 'apollo-server-micro';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { PubSub } from 'graphql-subscriptions';
 import typeDefs from './src/schema/schema.js';
 import resolvers from './src/resolvers/resolvers.js';
-import dotenv from 'dotenv';
-import cors from 'cors';
-
-// Load environment variables from .env file
-dotenv.config();
-
-// Initialize Express application
-const app = express();
-
-// CORS configuration
-const corsOptions = {
-  origin: process.env.CLIENT_URL || 'https://townsquare-client-rho.vercel.app',
-  credentials: true,
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-};
-
-// Enable CORS for all routes
-app.use(cors(corsOptions));
-
-// Handle OPTIONS requests
-app.options('*', cors(corsOptions));
+import Cors from 'micro-cors';
 
 // Initialize PubSub instance for subscriptions
 const pubsub = new PubSub();
@@ -42,71 +17,40 @@ const schema = makeExecutableSchema({
 // Initialize Apollo Server with schema and context configuration
 const server = new ApolloServer({
   schema,
-  context: async ({ req, connection }) => {
-    if (connection) {
-      // Provide context for subscriptions
-      return { ...connection.context, pubsub };
-    }
+  context: async ({ req }) => {
     // Provide context for queries and mutations
     return { req, pubsub };
   },
-  plugins: [{
-    async serverWillStart() {
-      return {
-        async drainServer() {
-          subscriptionServer.close(); // Close subscription server on shutdown
-        }
-      };
-    }
-  }]
+  // Disable Apollo Server's built-in CORS as we'll handle it with micro-cors
+  cors: false,
 });
 
-let subscriptionServer;
+// CORS configuration
+const cors = Cors({
+  allowMethods: ['POST', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization'],
+  origin: process.env.CLIENT_URL || 'https://townsquare-client-rho.vercel.app'
+});
 
-// Function to start the server
-const startServer = async () => {
-  await server.start(); // Start Apollo Server
-  server.applyMiddleware({ 
-    app, 
-    path: '/graphql',
-    cors: false // Disable Apollo Server's CORS as we're handling it with Express
-  });
+// Prepare the handler
+const startServer = server.start();
 
-  const httpServer = createServer(app);
-
-  // Create and configure subscription server
-  subscriptionServer = SubscriptionServer.create(
-    {
-      schema,
-      execute,
-      subscribe,
-      onConnect: (connectionParams, webSocket, context) => {
-        console.log('Client connected');
-        return { pubsub }; // Provide pubsub context to subscriptions
-      },
-      onDisconnect: (webSocket, context) => {
-        console.log('Client disconnected');
-      }
-    },
-    { server: httpServer, path: '/graphql' } // Attach to HTTP server and specify path
-  );
-
-  const PORT = process.env.PORT || 4000;
-  httpServer.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}/graphql`);
-  });
-};
-
-startServer();
-
-// For serverless environments (like Vercel), export a handler
-export default async (req, res) => {
-  if (!subscriptionServer) {
-    await startServer();
-  }
+// Export the serverless function handler
+export default cors(async (req, res) => {
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
+    res.end();
     return;
   }
-  return server.createHandler({ path: '/graphql' })(req, res);
+
+  await startServer;
+  await server.createHandler({
+    path: '/api/graphql',
+  })(req, res);
+});
+
+// Configure Vercel to treat this as an API route
+export const config = {
+  api: {
+    bodyParser: false,
+  },
 };
