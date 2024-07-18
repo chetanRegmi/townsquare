@@ -29,7 +29,7 @@ const server = new ApolloServer({
 const cors = Cors({
   allowMethods: ['POST', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],
-  origin: process.env.CLIENT_URL || 'https://townsquare-client-rho.vercel.app'
+  origin: 'https://townsquare-client-au5cb553w-chetan-regmis-projects.vercel.app/'
 });
 
 // Prepare the handler
