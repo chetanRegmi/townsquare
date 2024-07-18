@@ -16,9 +16,6 @@ dotenv.config();
 // Initialize Express application
 const app = express();
 
-// Create HTTP server to handle incoming requests
-const httpServer = createServer(app);
-
 // Enable CORS to allow cross-origin requests
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:3000', // Allowed origin
@@ -56,50 +53,31 @@ const server = new ApolloServer({
   }]
 });
 
-// Define the port number for the server
-const PORT = process.env.PORT || 4000;
-
 let subscriptionServer;
 
 // Function to start the server
-async function startServer() {
-  await server.start(); // Start Apollo Server
-  server.applyMiddleware({ app, path: '/graphql' }); // Apply middleware for GraphQL endpoint
+export default async (req, res) => {
+  if (!subscriptionServer) {
+    await server.start(); // Start Apollo Server
+    server.applyMiddleware({ app, path: '/graphql' }); // Apply middleware for GraphQL endpoint
 
-  // Create and configure subscription server
-  subscriptionServer = SubscriptionServer.create(
-    {
-      schema,
-      execute,
-      subscribe,
-      onConnect: (connectionParams, webSocket, context) => {
-        console.log('Client connected');
-        return { pubsub }; // Provide pubsub context to subscriptions
+    // Create and configure subscription server
+    subscriptionServer = SubscriptionServer.create(
+      {
+        schema,
+        execute,
+        subscribe,
+        onConnect: (connectionParams, webSocket, context) => {
+          console.log('Client connected');
+          return { pubsub }; // Provide pubsub context to subscriptions
+        },
+        onDisconnect: (webSocket, context) => {
+          console.log('Client disconnected');
+        }
       },
-      onDisconnect: (webSocket, context) => {
-        console.log('Client disconnected');
-      }
-    },
-    { server: httpServer, path: '/graphql' } // Attach to HTTP server and specify path
-  );
+      { server: createServer(app), path: '/graphql' } // Attach to HTTP server and specify path
+    );
+  }
 
-  // Start HTTP server and listen on specified port
-  httpServer.listen(PORT, () => {
-    console.log(`🚀 Server ready at http://localhost:${PORT}${server.graphqlPath}`);
-    console.log(`🚀 Subscriptions ready at ws://localhost:${PORT}${server.graphqlPath}`);
-  });
-}
-
-// Start the server and catch any errors
-startServer().catch(error => {
-  console.error('Error starting server:', error);
-});
-
-// Graceful shutdown on SIGINT signal
-process.on('SIGINT', () => {
-  console.log('Shutting down server...');
-  httpServer.close(() => {
-    console.log('Server shut down');
-    process.exit(0);
-  });
-});
+  res.status(200).send('Server is running');
+};
