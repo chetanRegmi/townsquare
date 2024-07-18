@@ -6,7 +6,7 @@ export const GET_POSTS = gql`
     posts(offset: $offset, limit: $limit) {
       id
       title
-      order
+      postOrder
     }
   }
 `;
@@ -17,7 +17,7 @@ export const UPDATE_POST_ORDER = gql`
     updatePostOrder(postId: $postId, newOrder: $newOrder) {
       id
       title
-      order
+      postOrder
     }
   }
 `;
@@ -28,7 +28,7 @@ export const POST_UPDATED_SUBSCRIPTION = gql`
     postUpdated {
       id
       title
-      order
+      postOrder
     }
   }
 `;
