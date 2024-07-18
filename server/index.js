@@ -19,8 +19,16 @@ const app = express();
 // Enable CORS to allow cross-origin requests
 app.use(cors({
   origin: process.env.CLIENT_URL || 'https://townsquare-client-rho.vercel.app/', // Allowed origin
-  credentials: true // Allow credentials
+  credentials: true, // Allow credentials
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+//Enable CORS for all routes
+app.use(cors(corsOptions));
+
+// Handle OPTIONS requests
+app.options('*', cors(corsOptions));
 
 // Initialize PubSub instance for subscriptions
 const pubsub = new PubSub();
@@ -59,7 +67,7 @@ let subscriptionServer;
 export default async (req, res) => {
   if (!subscriptionServer) {
     await server.start(); // Start Apollo Server
-    server.applyMiddleware({ app, path: '/graphql' }); // Apply middleware for GraphQL endpoint
+    server.applyMiddleware({ app, path: '/graphql' , cors: false}); // Apply middleware for GraphQL endpoint
 
     // Create and configure subscription server
     subscriptionServer = SubscriptionServer.create(
