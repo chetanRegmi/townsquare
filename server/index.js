@@ -16,15 +16,15 @@ dotenv.config();
 // Initialize Express application
 const app = express();
 
-// Enable CORS to allow cross-origin requests
-app.use(cors({
-  origin: process.env.CLIENT_URL || 'https://townsquare-client-rho.vercel.app/', // Allowed origin
-  credentials: true, // Allow credentials
+// CORS configuration
+const corsOptions = {
+  origin: process.env.CLIENT_URL || 'https://townsquare-client-rho.vercel.app',
+  credentials: true,
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
-}));
+};
 
-//Enable CORS for all routes
+// Enable CORS for all routes
 app.use(cors(corsOptions));
 
 // Handle OPTIONS requests
@@ -64,28 +64,49 @@ const server = new ApolloServer({
 let subscriptionServer;
 
 // Function to start the server
+const startServer = async () => {
+  await server.start(); // Start Apollo Server
+  server.applyMiddleware({ 
+    app, 
+    path: '/graphql',
+    cors: false // Disable Apollo Server's CORS as we're handling it with Express
+  });
+
+  const httpServer = createServer(app);
+
+  // Create and configure subscription server
+  subscriptionServer = SubscriptionServer.create(
+    {
+      schema,
+      execute,
+      subscribe,
+      onConnect: (connectionParams, webSocket, context) => {
+        console.log('Client connected');
+        return { pubsub }; // Provide pubsub context to subscriptions
+      },
+      onDisconnect: (webSocket, context) => {
+        console.log('Client disconnected');
+      }
+    },
+    { server: httpServer, path: '/graphql' } // Attach to HTTP server and specify path
+  );
+
+  const PORT = process.env.PORT || 4000;
+  httpServer.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}/graphql`);
+  });
+};
+
+startServer();
+
+// For serverless environments (like Vercel), export a handler
 export default async (req, res) => {
   if (!subscriptionServer) {
-    await server.start(); // Start Apollo Server
-    server.applyMiddleware({ app, path: '/graphql' , cors: false}); // Apply middleware for GraphQL endpoint
-
-    // Create and configure subscription server
-    subscriptionServer = SubscriptionServer.create(
-      {
-        schema,
-        execute,
-        subscribe,
-        onConnect: (connectionParams, webSocket, context) => {
-          console.log('Client connected');
-          return { pubsub }; // Provide pubsub context to subscriptions
-        },
-        onDisconnect: (webSocket, context) => {
-          console.log('Client disconnected');
-        }
-      },
-      { server: createServer(app), path: '/graphql' } // Attach to HTTP server and specify path
-    );
+    await startServer();
   }
-
-  res.status(200).send('Server is running');
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+  return server.createHandler({ path: '/graphql' })(req, res);
 };
