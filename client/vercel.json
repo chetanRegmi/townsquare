@@ -7,6 +7,11 @@
         "config": { "distDir": "build" }
       }
     ],
+    "functions": {
+        "api/graphql.js": {
+          "maxDuration": 10
+        }
+      },
     "routes": [
       {
         "src": "/manifest.json",
